@@ -21,7 +21,7 @@ function createServer() {
   return http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
 
-    if (!url.pathname.startsWith('/file')) {
+    if (!url.pathname.startsWith('/file/')) {
       res.statusCode = 200;
       res.setHeader('Content-Type', 'text/plain');
       res.end('Use /file/<path> to load files');
@@ -29,9 +29,9 @@ function createServer() {
       return;
     }
 
-    const basePath = path.join(__dirname, '..', 'public');
+    const basePath = path.resolve(__dirname, '..', 'public');
     const requestPath = url.pathname.replace(/^\/file\/?/, '') || 'index.html';
-    const pathToFile = path.normalize(path.join(basePath, requestPath));
+    const pathToFile = path.resolve(basePath, requestPath);
 
     if (requestPath.includes('//')) {
       res.statusCode = 404;
@@ -40,7 +40,9 @@ function createServer() {
       return res.end('Not Found');
     }
 
-    if (!pathToFile.startsWith(basePath)) {
+    if (
+      !(pathToFile === basePath || pathToFile.startsWith(basePath + path.sep))
+    ) {
       res.statusCode = 400;
       res.setHeader('Content-Type', 'text/plain');
       res.statusMessage = 'Forbidden';
