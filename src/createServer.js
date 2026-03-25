@@ -19,6 +19,13 @@ const mimeType = {
 
 function createServer() {
   return http.createServer(async (req, res) => {
+    if (req.url.includes('..')) {
+      res.statusCode = 400;
+      res.setHeader('Content-Type', 'text/plain');
+
+      return res.end('Forbidden');
+    }
+
     const url = new URL(req.url, `http://${req.headers.host}`);
 
     if (!url.pathname.startsWith('/file/')) {
@@ -29,9 +36,7 @@ function createServer() {
       return;
     }
 
-    const basePath = path.resolve(__dirname, '..', 'public');
     const requestPath = url.pathname.replace(/^\/file\/?/, '') || 'index.html';
-    const pathToFile = path.resolve(basePath, requestPath);
 
     if (requestPath.includes('//')) {
       res.statusCode = 404;
@@ -40,9 +45,10 @@ function createServer() {
       return res.end('Not Found');
     }
 
-    if (
-      !(pathToFile === basePath || pathToFile.startsWith(basePath + path.sep))
-    ) {
+    const basePath = path.resolve(__dirname, '..', 'public');
+    const pathToFile = path.resolve(basePath, requestPath);
+
+    if (!pathToFile.startsWith(basePath + path.sep)) {
       res.statusCode = 400;
       res.setHeader('Content-Type', 'text/plain');
       res.statusMessage = 'Forbidden';
